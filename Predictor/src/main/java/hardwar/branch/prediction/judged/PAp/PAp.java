@@ -25,25 +25,45 @@ public class PAp implements BranchPredictor {
         this.branchInstructionSize = branchInstructionSize;
 
         // Initialize the PABHR with the given bhr and branch instruction size
-        PABHR = null;
+        PABHR = new RegisterBank(branchInstructionSize, BHRSize);
 
         // Initializing the PAPHT with BranchInstructionSize as PHT Selector and 2^BHRSize row as each PHT entries
         // number and SCSize as block size
-        PAPHT = null;
+        PAPHT = new PerAddressPredictionHistoryTable(branchInstructionSize, 1 << BHRSize, SCSize);
 
         // Initialize the SC register
-        SC = null;
+        SC = new SIPORegister("SIPO2", SCSize, null);
     }
 
     @Override
     public BranchResult predict(BranchInstruction branchInstruction) {
-        // TODO: complete Task 1
-        return BranchResult.NOT_TAKEN;
+        Bit[] address = this.getCacheEntry(branchInstruction.getInstructionAddress(), this.PABHR.read(branchInstruction.getInstructionAddress()).read());
+        PAPHT.putIfAbsent(address, getDefaultBlock());
+        SC.load(PAPHT.get(address));
+        return BranchResult.of(SC.read()[0].getValue());
     }
 
     @Override
     public void update(BranchInstruction instruction, BranchResult actual) {
-        // TODO:complete Task 2
+//        // TODO:complete Task 2
+//
+//        Bit[] address = this.getCacheEntry(instruction.getInstructionAddress());
+//
+//        Bit[] temp = SC.read();
+//        if (actual == BranchResult.TAKEN) {
+//            temp = CombinationalLogic.count(temp, true, CountMode.SATURATING);
+//        } else if (actual == BranchResult.NOT_TAKEN) {
+//            temp = CombinationalLogic.count(temp, false, CountMode.SATURATING);
+//        }
+//        this.PHT.put(this.PABHR.read(instruction.getInstructionAddress()).read(), temp);
+//        ShiftRegister arr = this.PABHR.read(instruction.getInstructionAddress());
+//        if (actual == BranchResult.TAKEN) {
+//            arr.insert(Bit.ONE);
+//            this.PABHR.write(instruction.getInstructionAddress() , arr.read());
+//        } else if (actual == BranchResult.NOT_TAKEN) {
+//            arr.insert(Bit.ZERO);
+//            this.PABHR.write(instruction.getInstructionAddress() , arr.read());
+//        }
     }
 
 

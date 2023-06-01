@@ -19,28 +19,52 @@ public class SAg implements BranchPredictor {
 
     public SAg(int BHRSize, int SCSize, int branchInstructionSize, int KSize) {
         // TODO: complete the constructor
-        this.branchInstructionSize = 0;
-        this.KSize = 0;
+        this.branchInstructionSize = branchInstructionSize;
+        this.KSize = KSize;
 
         // Initialize the PABHR with the given bhr and Ksize
-        PSBHR = null;
+        PSBHR = new RegisterBank(KSize, BHRSize);
 
         // Initialize the PHT with a size of 2^size and each entry having a saturating counter of size "SCSize"
-        PHT = null;
+        PHT =  new PageHistoryTable(1 << BHRSize, SCSize);
 
         // Initialize the SC register
-        SC = null;
+        SC =  new SIPORegister("SC", SCSize, null);
     }
 
     @Override
     public BranchResult predict(BranchInstruction instruction) {
         // TODO: complete Task 1
-        return BranchResult.NOT_TAKEN;
+        Bit[] address = hash(instruction.getInstructionAddress());
+        this.PHT.putIfAbsent(this.PSBHR.read(address).read() , getDefaultBlock());
+        this.SC.load(this.PHT.get(this.PSBHR.read(address).read()));
+        if (this.SC.read()[0] == Bit.ONE) {
+            return BranchResult.TAKEN;
+        } else {
+            return BranchResult.NOT_TAKEN;
+        }
     }
 
     @Override
     public void update(BranchInstruction branchInstruction, BranchResult actual) {
         // TODO: complete Task 2
+        Bit[] temp = SC.read();
+
+        Bit[] address = hash(branchInstruction.getInstructionAddress());
+        if (actual == BranchResult.TAKEN) {
+            temp = CombinationalLogic.count(temp, true, CountMode.SATURATING);
+        } else if (actual == BranchResult.NOT_TAKEN) {
+            temp = CombinationalLogic.count(temp, false, CountMode.SATURATING);
+        }
+        this.PHT.put(this.PSBHR.read(address).read(), temp);
+        ShiftRegister arr = this.PSBHR.read(address);
+        if (actual == BranchResult.TAKEN) {
+            arr.insert(Bit.ONE);
+            this.PSBHR.write(address, arr.read());
+        } else if (actual == BranchResult.NOT_TAKEN) {
+            arr.insert(Bit.ZERO);
+            this.PSBHR.write(address , arr.read());
+        }
     }
 
     private Bit[] getRBAddressLine(Bit[] branchAddress) {
