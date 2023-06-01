@@ -37,8 +37,7 @@ public class SAs implements BranchPredictor {
 
     @Override
     public BranchResult predict(BranchInstruction branchInstruction) {
-        Bit[] address = branchInstruction.getInstructionAddress();
-        address = CombinationalLogic.hash(address, this.KSize, this.hashMode);
+        Bit[] address = getAddressLine(branchInstruction.getInstructionAddress());
         address = this.getCacheEntry(address, this.PSBHR.read(address).read());
         PSPHT.putIfAbsent(address, getDefaultBlock());
         SC.load(PSPHT.get(address));
@@ -48,7 +47,7 @@ public class SAs implements BranchPredictor {
     @Override
     public void update(BranchInstruction branchInstruction, BranchResult actual) {
         Bit[] temp = SC.read();
-        Bit[] address = CombinationalLogic.hash(branchInstruction.getInstructionAddress(), this.KSize, this.hashMode);
+        Bit[] address = getAddressLine(branchInstruction.getInstructionAddress());
         if (actual == BranchResult.TAKEN) {
             temp = CombinationalLogic.count(temp, true, CountMode.SATURATING);
         } else if (actual == BranchResult.NOT_TAKEN) {
@@ -62,7 +61,7 @@ public class SAs implements BranchPredictor {
             this.PSBHR.write(address, arr.read());
         } else if (actual == BranchResult.NOT_TAKEN) {
             arr.insert(Bit.ZERO);
-            this.PSBHR.write(address , arr.read());
+            this.PSBHR.write(address, arr.read());
         }
     }
 
