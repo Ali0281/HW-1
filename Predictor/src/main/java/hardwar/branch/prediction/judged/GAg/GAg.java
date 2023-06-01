@@ -41,6 +41,11 @@ public class GAg implements BranchPredictor {
     @Override
     public BranchResult predict(BranchInstruction branchInstruction) {
         // TODO : complete Task 1
+//        if (this.PHT.get(this.BHR.read()) == null) {
+//            this.SC.clear();
+//            return BranchResult.NOT_TAKEN;
+//        }
+        this.PHT.putIfAbsent(this.BHR.read(), getDefaultBlock());
         this.SC.load(this.PHT.get(this.BHR.read()));
         if (this.SC.read()[0] == Bit.ONE) {
             return BranchResult.TAKEN;
@@ -60,9 +65,9 @@ public class GAg implements BranchPredictor {
         // TODO: complete Task 2
         Bit[] temp = SC.read();
         if (actual == BranchResult.TAKEN) {
-            temp = CombinationalLogic.count(temp , true, CountMode.SATURATING);
+            temp = CombinationalLogic.count(temp, true, CountMode.SATURATING);
         } else if (actual == BranchResult.NOT_TAKEN) {
-            temp =CombinationalLogic.count(temp , false, CountMode.SATURATING);
+            temp = CombinationalLogic.count(temp, false, CountMode.SATURATING);
         }
         this.PHT.put(BHR.read(), temp);
     }
