@@ -45,25 +45,26 @@ public class PAp implements BranchPredictor {
 
     @Override
     public void update(BranchInstruction instruction, BranchResult actual) {
-//        // TODO:complete Task 2
-//
-//        Bit[] address = this.getCacheEntry(instruction.getInstructionAddress());
-//
-//        Bit[] temp = SC.read();
-//        if (actual == BranchResult.TAKEN) {
-//            temp = CombinationalLogic.count(temp, true, CountMode.SATURATING);
-//        } else if (actual == BranchResult.NOT_TAKEN) {
-//            temp = CombinationalLogic.count(temp, false, CountMode.SATURATING);
-//        }
-//        this.PHT.put(this.PABHR.read(instruction.getInstructionAddress()).read(), temp);
-//        ShiftRegister arr = this.PABHR.read(instruction.getInstructionAddress());
-//        if (actual == BranchResult.TAKEN) {
-//            arr.insert(Bit.ONE);
-//            this.PABHR.write(instruction.getInstructionAddress() , arr.read());
-//        } else if (actual == BranchResult.NOT_TAKEN) {
-//            arr.insert(Bit.ZERO);
-//            this.PABHR.write(instruction.getInstructionAddress() , arr.read());
-//        }
+        // TODO:complete Task 2
+
+        Bit[] address = this.getCacheEntry(instruction.getInstructionAddress(), this.PABHR.read(instruction.getInstructionAddress()).read());
+
+        Bit[] temp = SC.read();
+        if (actual == BranchResult.TAKEN) {
+            temp = CombinationalLogic.count(temp, true, CountMode.SATURATING);
+        } else if (actual == BranchResult.NOT_TAKEN) {
+            temp = CombinationalLogic.count(temp, false, CountMode.SATURATING);
+        }
+        PAPHT.put(address, temp);
+
+        ShiftRegister arr = this.PABHR.read(instruction.getInstructionAddress());
+        if (actual == BranchResult.TAKEN) {
+            arr.insert(Bit.ONE);
+            this.PABHR.write(instruction.getInstructionAddress() , arr.read());
+        } else if (actual == BranchResult.NOT_TAKEN) {
+            arr.insert(Bit.ZERO);
+            this.PABHR.write(instruction.getInstructionAddress() , arr.read());
+        }
     }
 
 
