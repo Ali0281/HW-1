@@ -47,7 +47,7 @@ public class GAp implements BranchPredictor {
     @Override
     public BranchResult predict(BranchInstruction branchInstruction) {
         Bit[] address = this.getCacheEntry(branchInstruction.getInstructionAddress());
-
+        PAPHT.putIfAbsent(address, getDefaultBlock());
         SC.load(PAPHT.get(address));
         return BranchResult.of(SC.read()[0].getValue());
     }
@@ -69,6 +69,11 @@ public class GAp implements BranchPredictor {
             counter = CombinationalLogic.count(counter, false, CountMode.SATURATING);
         }
         PAPHT.put(address, counter);
+        if (BranchResult.isTaken(actual)) {
+            BHR.insert(Bit.ONE);
+        } else {
+            BHR.insert(Bit.ZERO);
+        }
     }
 
     /**
