@@ -39,7 +39,7 @@ public class SAs implements BranchPredictor {
     public BranchResult predict(BranchInstruction branchInstruction) {
         Bit[] address = branchInstruction.getInstructionAddress();
         address = CombinationalLogic.hash(address, this.KSize, this.hashMode);
-        address = this.getCacheEntry(address, this.PSBHR.read(branchInstruction.getInstructionAddress()).read());
+        address = this.getCacheEntry(address, this.PSBHR.read(address).read());
         PSPHT.putIfAbsent(address, getDefaultBlock());
         SC.load(PSPHT.get(address));
         return BranchResult.of(SC.read()[0].getValue());
@@ -54,6 +54,7 @@ public class SAs implements BranchPredictor {
         } else if (actual == BranchResult.NOT_TAKEN) {
             temp = CombinationalLogic.count(temp, false, CountMode.SATURATING);
         }
+
         this.PSPHT.put(this.PSBHR.read(address).read(), temp);
         ShiftRegister arr = this.PSBHR.read(address);
         if (actual == BranchResult.TAKEN) {
