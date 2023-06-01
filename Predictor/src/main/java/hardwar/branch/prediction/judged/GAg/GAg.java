@@ -23,13 +23,13 @@ public class GAg implements BranchPredictor {
     public GAg(int BHRSize, int SCSize) {
         // TODO : complete the constructor
         // Initialize the BHR register with the given size and no default value
-        this.BHR = new SIPORegister("BHR", BHRSize, getDefaultBlock());
+        this.BHR = new SIPORegister("BHR", BHRSize, null);
 
         // Initialize the PHT with a size of 2^size and each entry having a saturating counter of size "SCSize"
         this.PHT = new PageHistoryTable(1 << BHRSize, SCSize);
 
         // Initialize the SC register
-        this.SC = new SIPORegister("SC", SCSize, getDefaultBlock());
+        this.SC = new SIPORegister("SC", SCSize, null);
     }
 
     /**
@@ -60,12 +60,11 @@ public class GAg implements BranchPredictor {
         // TODO: complete Task 2
         Bit[] temp = SC.read();
         if (actual == BranchResult.TAKEN) {
-            temp= CombinationalLogic.count(temp , true, CountMode.SATURATING);
+            temp = CombinationalLogic.count(temp , true, CountMode.SATURATING);
         } else if (actual == BranchResult.NOT_TAKEN) {
             temp =CombinationalLogic.count(temp , false, CountMode.SATURATING);
         }
         this.PHT.put(BHR.read(), temp);
-
     }
 
 
