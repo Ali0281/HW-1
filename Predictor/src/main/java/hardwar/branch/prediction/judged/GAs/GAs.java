@@ -29,19 +29,19 @@ public class GAs implements BranchPredictor {
      */
     public GAs(int BHRSize, int SCSize, int branchInstructionSize, int KSize, HashMode hashmode) {
         // TODO: complete the constructor
-        this.branchInstructionSize = 0;
-        this.KSize = 0;
+        this.branchInstructionSize = branchInstructionSize;
+        this.KSize = KSize;
         this.hashMode = HashMode.XOR;
 
         // Initialize the BHR register with the given size and no default value
-        BHR = null;
+        this.BHR = new SIPORegister("SIPO", BHRSize, null);
 
         // Initializing the PAPHT with K bit as PHT selector and 2^BHRSize row as each PHT entries
         // number and SCSize as block size
-        PSPHT = null;
+        PSPHT = new PerAddressPredictionHistoryTable(branchInstructionSize, 1 << BHRSize, SCSize);
 
         // Initialize the saturating counter
-        SC = null;
+        SC = new SIPORegister("SIPO2", SCSize, null);;
     }
 
     /**
@@ -53,8 +53,11 @@ public class GAs implements BranchPredictor {
      */
     @Override
     public BranchResult predict(BranchInstruction branchInstruction) {
-        // TODO: complete Task 1
-        return BranchResult.NOT_TAKEN;
+        Bit[] address = this.getCacheEntry(branchInstruction.getInstructionAddress());
+        address = CombinationalLogic.hash(address, this.KSize, this.hashMode);
+        PSPHT.putIfAbsent(address, getDefaultBlock());
+        SC.load(PSPHT.get(address));
+        return BranchResult.of(SC.read()[0].getValue());
     }
 
     /**
@@ -65,7 +68,21 @@ public class GAs implements BranchPredictor {
      */
     @Override
     public void update(BranchInstruction branchInstruction, BranchResult actual) {
-        // TODO: complete Task 2
+        // TODO : complete Task 2
+        Bit[] address = this.getCacheEntry(branchInstruction.getInstructionAddress());
+        address = CombinationalLogic.hash(address, this.KSize, this.hashMode);
+        Bit[] counter = SC.read();
+        if (BranchResult.isTaken(actual)) {
+            counter = CombinationalLogic.count(counter, true, CountMode.SATURATING);
+        } else {
+            counter = CombinationalLogic.count(counter, false, CountMode.SATURATING);
+        }
+        PSPHT.put(address, counter);
+        if (BranchResult.isTaken(actual)) {
+            BHR.insert(Bit.ONE);
+        } else {
+            BHR.insert(Bit.ZERO);
+        }
     }
 
     /**
