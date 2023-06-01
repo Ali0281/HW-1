@@ -47,6 +47,7 @@ public class GAp implements BranchPredictor {
     @Override
     public BranchResult predict(BranchInstruction branchInstruction) {
         Bit[] address = this.getCacheEntry(branchInstruction.getInstructionAddress());
+
         SC.load(PAPHT.get(address));
         return BranchResult.of(SC.read()[0].getValue());
     }
