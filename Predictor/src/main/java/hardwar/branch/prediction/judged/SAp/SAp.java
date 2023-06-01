@@ -38,7 +38,7 @@ public class SAp implements BranchPredictor {
     public BranchResult predict(BranchInstruction branchInstruction) {
         // TODO: complete Task 1
         Bit[] temp = hash(branchInstruction.getInstructionAddress());
-        Bit[] address = this.getCacheEntry(temp, this.PSBHR.read(temp).read());
+        Bit[] address = this.getCacheEntry(branchInstruction.getInstructionAddress(), this.PSBHR.read(temp).read());
         PAPHT.putIfAbsent(address, getDefaultBlock());
         SC.load(PAPHT.get(address));
         return BranchResult.of(SC.read()[0].getValue());
@@ -48,7 +48,7 @@ public class SAp implements BranchPredictor {
     public void update(BranchInstruction branchInstruction, BranchResult actual) {
         // TODO:complete Task 2
         Bit[] add = hash(branchInstruction.getInstructionAddress());
-        Bit[] address = this.getCacheEntry(add, this.PSBHR.read(add).read());
+        Bit[] address = this.getCacheEntry(branchInstruction.getInstructionAddress(), this.PSBHR.read(add).read());
 
         Bit[] temp = SC.read();
         if (actual == BranchResult.TAKEN) {
