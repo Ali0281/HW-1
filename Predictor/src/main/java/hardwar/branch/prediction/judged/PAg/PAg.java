@@ -25,7 +25,7 @@ public class PAg implements BranchPredictor {
     public PAg(int BHRSize, int SCSize, int branchInstructionSize) {
         // TODO: complete the constructor
         // Initialize the PABHR with the given bhr and branch instruction size
-        PABHR = new RegisterBank(branchInstructionSize,BHRSize);
+        PABHR = new RegisterBank(branchInstructionSize, BHRSize);
 
         // Initialize the PHT with a size of 2^size and each entry having a saturating counter of size "SCSize"
         PHT =  new PageHistoryTable(1 << BHRSize, SCSize);
@@ -63,13 +63,14 @@ public class PAg implements BranchPredictor {
             temp = CombinationalLogic.count(temp, false, CountMode.SATURATING);
         }
         this.PHT.put(this.PABHR.read(instruction.getInstructionAddress()).read(), temp);
+        ShiftRegister arr = this.PABHR.read(instruction.getInstructionAddress());
         if (actual == BranchResult.TAKEN) {
-            this.PABHR.read(instruction.getInstructionAddress()).insert(Bit.ONE);
+            arr.insert(Bit.ONE);
+            this.PABHR.write(instruction.getInstructionAddress() , arr.read());
         } else if (actual == BranchResult.NOT_TAKEN) {
-            this.PABHR.read(instruction.getInstructionAddress()).insert(Bit.ZERO);
+            arr.insert(Bit.ZERO);
+            this.PABHR.write(instruction.getInstructionAddress() , arr.read());
         }
-
-
     }
 
     /**
