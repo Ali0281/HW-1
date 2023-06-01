@@ -25,17 +25,17 @@ public class GAp implements BranchPredictor {
      */
     public GAp(int BHRSize, int SCSize, int branchInstructionSize) {
         // TODO: complete the constructor
-        this.branchInstructionSize = 0;
+        this.branchInstructionSize = branchInstructionSize;
 
         // Initialize the BHR register with the given size and no default value
-        this.BHR = null;
+        this.BHR = new SIPORegister("SIPO", BHRSize, null);
 
         // Initializing the PAPHT with BranchInstructionSize as PHT Selector and 2^BHRSize row as each PHT entries
         // number and SCSize as block size
-        PAPHT = null;
+        PAPHT = new PerAddressPredictionHistoryTable(branchInstructionSize, 1 << BHRSize, SCSize);
 
         // Initialize the SC register
-        SC = null;
+        SC = new SIPORegister("SIPO2", SCSize, null);
     }
 
     /**
@@ -46,8 +46,9 @@ public class GAp implements BranchPredictor {
      */
     @Override
     public BranchResult predict(BranchInstruction branchInstruction) {
-        // TODO: complete Task 1
-        return BranchResult.NOT_TAKEN;
+        Bit[] address = this.getCacheEntry(branchInstruction.getInstructionAddress());
+        SC.load(PAPHT.get(address));
+        return BranchResult.of(SC.read()[0].getValue());
     }
 
     /**
@@ -59,8 +60,15 @@ public class GAp implements BranchPredictor {
     @Override
     public void update(BranchInstruction branchInstruction, BranchResult actual) {
         // TODO : complete Task 2
+        Bit[] address = this.getCacheEntry(branchInstruction.getInstructionAddress());
+        Bit[] counter = SC.read();
+        if (BranchResult.isTaken(actual)) {
+            counter = CombinationalLogic.count(counter, true, CountMode.SATURATING);
+        } else {
+            counter = CombinationalLogic.count(counter, false, CountMode.SATURATING);
+        }
+        PAPHT.put(address, counter);
     }
-
 
     /**
      * concat the branch address and BHR to retrieve the desired address
