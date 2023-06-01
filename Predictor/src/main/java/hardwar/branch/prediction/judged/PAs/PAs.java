@@ -21,19 +21,19 @@ public class PAs implements BranchPredictor {
 
     public PAs(int BHRSize, int SCSize, int branchInstructionSize, int KSize, HashMode hashMode) {
         // TODO: complete the constructor
-        this.branchInstructionSize = 0;
-        this.KSize = 0;
+        this.branchInstructionSize = branchInstructionSize;
+        this.KSize = KSize;
         this.hashMode = HashMode.XOR;
 
         // Initialize the PABHR with the given bhr and branch instruction size
-        PABHR = null;
+        PABHR = new RegisterBank(branchInstructionSize, BHRSize);
 
         // Initializing the PAPHT with K bit as PHT selector and 2^BHRSize row as each PHT entries
         // number and SCSize as block size
-        PSPHT = null;
+        PSPHT = new PerAddressPredictionHistoryTable(KSize, 1 << BHRSize, SCSize);
 
         // Initialize the saturating counter
-        SC = null;
+        SC = new SIPORegister("SIPO2", SCSize, null);
     }
 
     /**
@@ -45,13 +45,36 @@ public class PAs implements BranchPredictor {
      */
     @Override
     public BranchResult predict(BranchInstruction branchInstruction) {
-        // TODO: complete Task 1
-        return BranchResult.NOT_TAKEN;
+        Bit[] address = branchInstruction.getInstructionAddress();
+        address = CombinationalLogic.hash(address, this.KSize, this.hashMode);
+        address = this.getCacheEntry(address, this.PABHR.read(branchInstruction.getInstructionAddress()).read());
+        PSPHT.putIfAbsent(address, getDefaultBlock());
+        SC.load(PSPHT.get(address));
+        return BranchResult.of(SC.read()[0].getValue());
     }
 
     @Override
     public void update(BranchInstruction instruction, BranchResult actual) {
-        // TODO:complete Task 2
+        Bit[] address = instruction.getInstructionAddress();
+        address = CombinationalLogic.hash(address, this.KSize, this.hashMode);
+        address = this.getCacheEntry(address, this.PABHR.read(instruction.getInstructionAddress()).read());
+
+        Bit[] temp = SC.read();
+        if (actual == BranchResult.TAKEN) {
+            temp = CombinationalLogic.count(temp, true, CountMode.SATURATING);
+        } else if (actual == BranchResult.NOT_TAKEN) {
+            temp = CombinationalLogic.count(temp, false, CountMode.SATURATING);
+        }
+        PSPHT.put(address, temp);
+
+        ShiftRegister arr = this.PABHR.read(instruction.getInstructionAddress());
+        if (actual == BranchResult.TAKEN) {
+            arr.insert(Bit.ONE);
+            this.PABHR.write(instruction.getInstructionAddress() , arr.read());
+        } else if (actual == BranchResult.NOT_TAKEN) {
+            arr.insert(Bit.ZERO);
+            this.PABHR.write(instruction.getInstructionAddress() , arr.read());
+        }
     }
 
     @Override

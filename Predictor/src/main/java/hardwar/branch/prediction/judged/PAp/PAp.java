@@ -46,7 +46,6 @@ public class PAp implements BranchPredictor {
     @Override
     public void update(BranchInstruction instruction, BranchResult actual) {
         // TODO:complete Task 2
-
         Bit[] address = this.getCacheEntry(instruction.getInstructionAddress(), this.PABHR.read(instruction.getInstructionAddress()).read());
 
         Bit[] temp = SC.read();
