@@ -53,8 +53,8 @@ public class SAs implements BranchPredictor {
         } else if (actual == BranchResult.NOT_TAKEN) {
             temp = CombinationalLogic.count(temp, false, CountMode.SATURATING);
         }
-
-        this.PSPHT.put(this.PSBHR.read(address).read(), temp);
+        Bit[] address2 = this.getCacheEntry(address, this.PSBHR.read(address).read());
+        this.PSPHT.put(address2, temp);
         ShiftRegister arr = this.PSBHR.read(address);
         if (actual == BranchResult.TAKEN) {
             arr.insert(Bit.ONE);
